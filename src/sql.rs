@@ -1,5 +1,4 @@
 use rusqlite::{params, Connection, Result};
-use teloxide::types::{Chat, ChatId};
 
 pub fn insert_user(conn: &Connection, user_id: &str, ea_id: &str) -> Result<usize> {
     conn.execute(
