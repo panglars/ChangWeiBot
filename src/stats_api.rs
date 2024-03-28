@@ -1,24 +1,45 @@
-use reqwest::blocking;
-use serde_json::Value;
 use std::error::Error;
 
-use url::{ParseError, Url};
+use url::Url;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PlayerStats {
+    userName: String,
+    rankName: String,
+    skill: f64,
+    scorePerMinute: f64,
+    killsPerMinute: f64,
+    winPercent: String,
+    accuracy: String,
+    headshots: String,
+    timePlayed: String,
+    killDeath: f64,
+    infantryKillDeath: f64,
+    infantryKillsPerMinute: f64,
+    kills: u32,
+    deaths: u32,
+    wins: u32,
+    loses: u32,
+    longestHeadShot: f64,
+    highestKillStreak: u32,
+    roundsPlayed: u32,
+}
 
 const STATSAPI: &str = "https://api.gametools.network/";
 
-pub fn get_stats(name: &str) -> Result<(), Box<dyn Error>> {
+pub async fn get_stats(name: &str) -> Result<PlayerStats, Box<dyn Error>> {
     let path = "/bf1/stats";
     let base = Url::parse(STATSAPI)?;
-    let mut baseurl = base.join(path)?;
-    baseurl
-        .query_pairs_mut()
+    let mut url = base.join(path)?;
+    url.query_pairs_mut()
         .append_pair("format_values", "true")
         .append_pair("name", name)
         .append_pair("platform", "pc")
         .append_pair("skip_battlelog", "false")
         .append_pair("lang", "en-us");
-    let response = blocking::get(baseurl)?.json::<Value>()?;
-
-    println!("{:#?}", response);
-    Ok(())
+    let json: PlayerStats = reqwest::get(url).await?.json().await?;
+    //println!("{:?}", json);
+    Ok(json)
 }

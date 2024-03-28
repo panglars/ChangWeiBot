@@ -1,3 +1,6 @@
+use serde_json::Value;
+use std::error::Error;
+
 use rusqlite::Connection;
 
 use teloxide::{
@@ -40,7 +43,7 @@ enum Command {
 
 async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     let conn = Connection::open("telegram_users.db").expect("error open db");
-    //    println!("msg: {:#?}", &msg);
+    //println!("msg: {:#?}", &msg);
 
     match cmd {
         Command::Help => {
@@ -57,16 +60,16 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
                 .await?
         }
         Command::Status(username) => {
+            let mut ea_id = String::new();
             if username.is_empty() {
-                let ea_id = sql::query_user(&conn, &msg.from().unwrap().id.to_string())
+                ea_id = sql::query_user(&conn, &msg.from().unwrap().id.to_string())
                     .expect("failed to check");
-                stats_api::get_stats(&ea_id);
-                bot.send_message(msg.chat.id, format!("Checking {ea_id}"))
-                    .await?
             } else {
-                bot.send_message(msg.chat.id, format!("Checking {username}."))
-                    .await?
+                ea_id = username;
             }
+            let json = stats_api::get_stats(&ea_id);
+            bot.send_message(msg.chat.id, format!("{:#?}", json.await))
+                .await?
         }
 
         Command::Bind(username) => {
