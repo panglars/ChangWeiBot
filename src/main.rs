@@ -1,24 +1,25 @@
-use serde_json::Value;
-use std::error::Error;
+use teloxide::{prelude::*, utils::command::BotCommands};
 
-use rusqlite::Connection;
-
-use teloxide::{
-    prelude::*,
-    utils::command::{self, BotCommands},
-};
-
-mod sql;
-mod stats_api;
+use changweibot::backend::{backend, req, ConsumerChan, ProducerChan, StateRequest, StateResponse};
 
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
+
     log::info!("Starting command bot...");
-
     let bot = Bot::from_env();
+    let (tx, rx): (ProducerChan, ConsumerChan) = tokio::sync::mpsc::channel(16);
+    let tx2 = tx.clone();
+    let backend_handler = tokio::spawn(async { backend(rx).await });
 
-    Command::repl(bot, answer).await;
+    Command::repl(bot, move |bot: Bot, msg: Message, cmd: Command| {
+        let tx = tx.clone();
+        async { answer(tx, bot, msg, cmd).await }
+    })
+    .await;
+    log::info!("Stopping backend...");
+    req(tx2, StateRequest::Stop).await;
+    backend_handler.await.unwrap();
 }
 
 #[derive(BotCommands, Clone)]
@@ -41,8 +42,7 @@ enum Command {
     Status(String),
 }
 
-async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
-    let conn = Connection::open("telegram_users.db").expect("error open db");
+async fn answer(电话: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     //println!("msg: {:#?}", &msg);
 
     match cmd {
@@ -60,24 +60,60 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
                 .await?
         }
         Command::Status(username) => {
-            let mut ea_id = String::new();
-            if username.is_empty() {
-                ea_id = sql::query_user(&conn, &msg.from().unwrap().id.to_string())
-                    .expect("failed to check");
+            let ea_id = if username.is_empty() {
+                match req(
+                    电话.clone(),
+                    StateRequest::QueryUser {
+                        user_id: msg.from().unwrap().id.to_string(),
+                    },
+                )
+                .await
+                {
+                    StateResponse::EaUser(u) => u,
+                    _ => {
+                        bot.send_message(
+                            msg.chat.id,
+                            "Failed to get your EA username, please set it with /bind",
+                        )
+                        .await?;
+                        return Ok(());
+                    }
+                }
             } else {
-                ea_id = username;
-            }
-            let json = stats_api::get_stats(&ea_id);
-            bot.send_message(msg.chat.id, format!("{:#?}", json.await))
+                username
+            };
+            let json = match req(电话, StateRequest::GetStats { ea_id: ea_id }).await {
+                StateResponse::Stats(s) => s,
+                _ => {
+                    bot.send_message(
+                        msg.chat.id,
+                        "Failed to fetch your EA stats, please wait a while and retry.",
+                    )
+                    .await?;
+                    return Ok(());
+                }
+            };
+            bot.send_message(msg.chat.id, format!("{:#?}", json))
                 .await?
         }
 
         Command::Bind(username) => {
             if msg.chat.id.is_user() {
-                sql::insert_user(&conn, &msg.from().unwrap().id.to_string(), &username)
-                    .expect("failed insert");
-                bot.send_message(msg.chat.id, format!("Bind with {username}."))
-                    .await?
+                match req(
+                    电话,
+                    StateRequest::InsertUser {
+                        user_id: msg.from().unwrap().id.to_string(),
+                        ea_id: username.clone(),
+                    },
+                )
+                .await
+                {
+                    StateResponse::Ok => {
+                        bot.send_message(msg.chat.id, format!("Bind with {username}."))
+                            .await?
+                    }
+                    _ => bot.send_message(msg.chat.id, "Failed to bind").await?,
+                }
             } else {
                 bot.send_message(msg.chat.id, format!("Please PM to bind user."))
                     .await?
@@ -85,10 +121,20 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
         }
         Command::Unbind(username) => {
             if msg.chat.id.is_user() {
-                sql::delete_user(&conn, &msg.from().unwrap().id.to_string())
-                    .expect("Failed to delete");
-                bot.send_message(msg.chat.id, format!("Unbind with {username}."))
-                    .await?
+                match req(
+                    电话,
+                    StateRequest::DeleteUser {
+                        user_id: msg.from().unwrap().id.to_string(),
+                    },
+                )
+                .await
+                {
+                    StateResponse::Ok => {
+                        bot.send_message(msg.chat.id, format!("Unbind with {username}."))
+                            .await?
+                    }
+                    _ => bot.send_message(msg.chat.id, "Failed to unbind").await?,
+                }
             } else {
                 bot.send_message(msg.chat.id, format!("Please PM to unbind user."))
                     .await?

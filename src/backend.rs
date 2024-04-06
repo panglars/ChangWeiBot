@@ -1,0 +1,106 @@
+use std::time::Duration;
+
+use rusqlite::Connection;
+
+use crate::{
+    sql::{delete_user, insert_user, query_user},
+    stats_api::{get_stats, PlayerStats},
+};
+
+#[derive(Debug)]
+pub enum StateRequest {
+    GetStats { ea_id: String },
+    InsertUser { user_id: String, ea_id: String },
+    QueryUser { user_id: String },
+    DeleteUser { user_id: String },
+    Stop,
+}
+
+#[derive(Debug)]
+pub enum StateResponse {
+    Ok,
+    Stats(PlayerStats),
+    EaUser(String),
+    DatabaseError(rusqlite::Error),
+    NetworkError(reqwest::Error),
+}
+
+pub type Pipe = (
+    tokio::sync::oneshot::Sender<StateResponse>,
+    tokio::sync::oneshot::Receiver<StateResponse>,
+);
+
+pub type StatePipe = (StateRequest, tokio::sync::oneshot::Sender<StateResponse>);
+
+pub type ProducerChan = tokio::sync::mpsc::Sender<StatePipe>;
+
+pub type ConsumerChan = tokio::sync::mpsc::Receiver<StatePipe>;
+
+pub async fn req(chan: ProducerChan, r: StateRequest) -> StateResponse {
+    let (p_tx, p_rx): Pipe = tokio::sync::oneshot::channel();
+    chan.send((r, p_tx)).await.unwrap();
+    // todo: error handling
+    let resp = tokio::task::spawn_blocking(|| p_rx.blocking_recv())
+        .await
+        .unwrap()
+        .unwrap();
+    resp
+}
+
+pub async fn backend(mut chan: ConsumerChan) {
+    // init clients
+    let db_conn = Connection::open("telegram_users.db").expect("error open db");
+    let qwq = reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(3))
+        .timeout(Duration::from_secs(5))
+        .build()
+        .expect("error create reqwest client");
+    // waiting for requests
+    'lp: loop {
+        let (req, pipe) = if let Some(x) = chan.recv().await {
+            x
+        } else {
+            log::error!("channel closed");
+            break 'lp;
+        };
+        let qwq = qwq.clone();
+        match req {
+            StateRequest::GetStats { ea_id } => {
+                let resp = match get_stats(qwq, &ea_id).await {
+                    Ok(x) => StateResponse::Stats(x),
+                    Err(e) => StateResponse::NetworkError(e),
+                };
+                pipe.send(resp).unwrap();
+            }
+            StateRequest::InsertUser { user_id, ea_id } => {
+                // todo: sql operations should be async
+                let resp = match insert_user(&db_conn, &user_id, &ea_id) {
+                    Ok(_x) => StateResponse::Ok,
+                    Err(e) => StateResponse::DatabaseError(e),
+                };
+                pipe.send(resp).unwrap();
+            }
+            StateRequest::QueryUser { user_id } => {
+                let resp = match query_user(&db_conn, &user_id) {
+                    Ok(x) => StateResponse::EaUser(x),
+                    Err(e) => StateResponse::DatabaseError(e),
+                };
+                pipe.send(resp).unwrap();
+            }
+            StateRequest::DeleteUser { user_id } => {
+                let resp = match delete_user(&db_conn, &user_id) {
+                    Ok(_x) => StateResponse::Ok,
+                    Err(e) => StateResponse::DatabaseError(e),
+                };
+                pipe.send(resp).unwrap();
+            }
+            StateRequest::Stop => {
+                // 假设它永远会成功.jpg
+                pipe.send(StateResponse::Ok).unwrap();
+                log::error!("`Stop` request received");
+                break 'lp;
+            }
+        }
+    }
+    log::warn!("backend exited");
+}
