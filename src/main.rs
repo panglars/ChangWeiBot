@@ -54,15 +54,55 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
             bot.send_message(msg.chat.id, Command::descriptions().to_string())
                 .await?
         }
-        // TODO archive
         Command::Weapons(username) => {
             bot.send_message(msg.chat.id, format!("Your username is @{username}."))
                 .await?
         }
         Command::Vehicles(username) => {
-            bot.send_message(msg.chat.id, format!("Your username is @{username}."))
+            let ea_id = if username.is_empty() {
+                match req(
+                    chan.clone(),
+                    StateRequest::QueryUser {
+                        user_id: msg.from().unwrap().id.to_string(),
+                    },
+                )
+                .await
+                {
+                    StateResponse::EaUser(u) => u,
+                    _ => {
+                        bot.send_message(
+                            msg.chat.id,
+                            "Failed to get your EA username, please set it with /bind",
+                        )
+                        .await?;
+                        return Ok(());
+                    }
+                }
+            } else {
+                username
+            };
+            let json = match req(
+                chan,
+                StateRequest::GetVehicles {
+                    ea_id: ea_id.clone(),
+                },
+            )
+            .await
+            {
+                StateResponse::Vehicles(s) => s,
+                _ => {
+                    bot.send_message(
+                        msg.chat.id,
+                        "Failed to fetch your EA stats, please wait a while and retry.",
+                    )
+                    .await?;
+                    return Ok(());
+                }
+            };
+            bot.send_message(msg.chat.id, format!("Vehicles of {ea_id}:\n{:#?}", json))
                 .await?
         }
+
         Command::Status(username) => {
             let ea_id = if username.is_empty() {
                 match req(
