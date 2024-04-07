@@ -3,15 +3,16 @@ use std::time::Duration;
 use rusqlite::Connection;
 
 use crate::{
-    json_format::{PlayerStats, Vehicles},
+    json_format::{PlayerStats, Vehicles, Weapons},
     sql::{delete_user, init_db, insert_user, query_user},
-    stats_api::{get_stats, get_vehicles},
+    stats_api::{get_stats, get_vehicles, get_weapons},
 };
 
 #[derive(Debug)]
 pub enum StateRequest {
     GetStats { ea_id: String },
     GetVehicles { ea_id: String },
+    GetWeapons { ea_id: String },
     InsertUser { user_id: String, ea_id: String },
     QueryUser { user_id: String },
     DeleteUser { user_id: String },
@@ -23,6 +24,7 @@ pub enum StateResponse {
     Ok,
     Stats(PlayerStats),
     Vehicles(Vehicles),
+    Weapons(Weapons),
     EaUser(String),
     DatabaseError(rusqlite::Error),
     NetworkError(reqwest::Error),
@@ -66,6 +68,14 @@ pub async fn backend(mut chan: ConsumerChan) {
         };
         let qwq = qwq.clone();
         match req {
+            StateRequest::GetWeapons { ea_id } => {
+                let resp = match get_weapons(qwq, &ea_id).await {
+                    Ok(x) => StateResponse::Weapons(x),
+                    Err(e) => StateResponse::NetworkError(e),
+                };
+                pipe.send(resp).unwrap();
+            }
+
             StateRequest::GetVehicles { ea_id } => {
                 let resp = match get_vehicles(qwq, &ea_id).await {
                     Ok(x) => StateResponse::Vehicles(x),

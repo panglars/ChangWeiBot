@@ -1,7 +1,7 @@
 use reqwest::Error;
 use url::Url;
 
-use crate::json_format::{PlayerStats, Vehicles};
+use crate::json_format::{PlayerStats, Vehicles, Weapons};
 
 const STATSAPI: &str = "https://api.gametools.network/";
 
@@ -32,6 +32,25 @@ pub async fn get_vehicles(cli: reqwest::Client, name: &str) -> Result<Vehicles, 
     let mut json: Vehicles = cli.get(url).send().await?.json().await?;
     json.sort_by_kill();
     json.get_top_item();
-    println!("{:#?}", json);
+    Ok(json)
+}
+
+// BUG Can't revice anything
+pub async fn get_weapons(cli: reqwest::Client, name: &str) -> Result<Weapons, Error> {
+    let path = "/bf1/weapons";
+    let base = Url::parse(STATSAPI).unwrap();
+    let mut url = base.join(path).unwrap();
+    url.query_pairs_mut()
+        .append_pair("format_values", "true")
+        .append_pair("name", name)
+        .append_pair("platform", "pc")
+        .append_pair("skip_battlelog", "false")
+        .append_pair("lang", "en-us");
+    println!("{}", url);
+    let mut json: Weapons = cli.get(url).send().await?.json().await?;
+    json.sort_by_kill();
+    json.get_top_item();
+    //    println!("{:#?}", json);
+
     Ok(json)
 }

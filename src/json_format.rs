@@ -14,6 +14,21 @@ pub struct per_Vehicles {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct Weapons {
+    userId: String,
+    weapons: Vec<per_Weapons>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct per_Weapons {
+    weaponName: String,
+    kills: u32,
+    killPerMinute: f64,
+    accuracy: String,
+    headshots: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PlayerStats {
     userName: String,
     rankName: String,
@@ -41,6 +56,14 @@ impl Vehicles {
         self.vehicles.sort_by(|a, b| b.kills.cmp(&a.kills));
     }
     pub fn get_top_item(&mut self) {
-        self.vehicles.split_off(5);
+        self.vehicles.split_off(7);
+    }
+}
+impl Weapons {
+    pub fn sort_by_kill(&mut self) {
+        self.weapons.sort_by(|a, b| b.kills.cmp(&a.kills));
+    }
+    pub fn get_top_item(&mut self) {
+        self.weapons.split_off(7);
     }
 }

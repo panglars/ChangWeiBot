@@ -55,9 +55,50 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                 .await?
         }
         Command::Weapons(username) => {
-            bot.send_message(msg.chat.id, format!("Your username is @{username}."))
+            let ea_id = if username.is_empty() {
+                match req(
+                    chan.clone(),
+                    StateRequest::QueryUser {
+                        user_id: msg.from().unwrap().id.to_string(),
+                    },
+                )
+                .await
+                {
+                    StateResponse::EaUser(u) => u,
+                    _ => {
+                        bot.send_message(
+                            msg.chat.id,
+                            "Failed to get your EA username, please set it with /bind",
+                        )
+                        .await?;
+                        return Ok(());
+                    }
+                }
+            } else {
+                username
+            };
+            let json = match req(
+                chan,
+                StateRequest::GetWeapons {
+                    ea_id: ea_id.clone(),
+                },
+            )
+            .await
+            {
+                StateResponse::Weapons(s) => s,
+                _ => {
+                    bot.send_message(
+                        msg.chat.id,
+                        "Failed to fetch your EA stats, please wait a while and retry.",
+                    )
+                    .await?;
+                    return Ok(());
+                }
+            };
+            bot.send_message(msg.chat.id, format!("Weapons of {ea_id}:\n{:#?}", json))
                 .await?
         }
+
         Command::Vehicles(username) => {
             let ea_id = if username.is_empty() {
                 match req(
