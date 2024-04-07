@@ -3,8 +3,9 @@ use std::time::Duration;
 use rusqlite::Connection;
 
 use crate::{
+    json_format::PlayerStats,
     sql::{delete_user, init_db, insert_user, query_user},
-    stats_api::{get_stats, PlayerStats},
+    stats_api::get_stats,
 };
 
 #[derive(Debug)]
