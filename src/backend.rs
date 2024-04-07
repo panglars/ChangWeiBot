@@ -3,7 +3,7 @@ use std::time::Duration;
 use rusqlite::Connection;
 
 use crate::{
-    sql::{delete_user, insert_user, query_user},
+    sql::{delete_user, init_db, insert_user, query_user},
     stats_api::{get_stats, PlayerStats},
 };
 
@@ -49,7 +49,8 @@ pub async fn req(chan: ProducerChan, r: StateRequest) -> StateResponse {
 
 pub async fn backend(mut chan: ConsumerChan) {
     // init clients
-    let db_conn = Connection::open("telegram_users.db").expect("error open db");
+    let db_conn = Connection::open("Users.db").expect("error open db");
+    init_db(&db_conn).expect("Error to create the table");
     let qwq = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(3))
         .timeout(Duration::from_secs(5))

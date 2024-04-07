@@ -42,7 +42,7 @@ enum Command {
     Status(String),
 }
 
-async fn answer(电话: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
+async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     //println!("msg: {:#?}", &msg);
 
     match cmd {
@@ -62,7 +62,7 @@ async fn answer(电话: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> R
         Command::Status(username) => {
             let ea_id = if username.is_empty() {
                 match req(
-                    电话.clone(),
+                    chan.clone(),
                     StateRequest::QueryUser {
                         user_id: msg.from().unwrap().id.to_string(),
                     },
@@ -82,7 +82,7 @@ async fn answer(电话: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> R
             } else {
                 username
             };
-            let json = match req(电话, StateRequest::GetStats { ea_id: ea_id }).await {
+            let json = match req(chan, StateRequest::GetStats { ea_id: ea_id }).await {
                 StateResponse::Stats(s) => s,
                 _ => {
                     bot.send_message(
@@ -100,7 +100,7 @@ async fn answer(电话: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> R
         Command::Bind(username) => {
             if msg.chat.id.is_user() {
                 match req(
-                    电话,
+                    chan,
                     StateRequest::InsertUser {
                         user_id: msg.from().unwrap().id.to_string(),
                         ea_id: username.clone(),
@@ -122,7 +122,7 @@ async fn answer(电话: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> R
         Command::Unbind(username) => {
             if msg.chat.id.is_user() {
                 match req(
-                    电话,
+                    chan,
                     StateRequest::DeleteUser {
                         user_id: msg.from().unwrap().id.to_string(),
                     },
