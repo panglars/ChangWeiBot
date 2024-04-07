@@ -1,6 +1,5 @@
-use teloxide::{prelude::*, utils::command::BotCommands};
-
 use changweibot::backend::{backend, req, ConsumerChan, ProducerChan, StateRequest, StateResponse};
+use teloxide::{prelude::*, utils::command::BotCommands};
 
 #[tokio::main]
 async fn main() {
@@ -11,10 +10,17 @@ async fn main() {
     let (tx, rx): (ProducerChan, ConsumerChan) = tokio::sync::mpsc::channel(16);
     let tx2 = tx.clone();
     let backend_handler = tokio::spawn(async { backend(rx).await });
-
+    let start_time = chrono::Utc::now();
     Command::repl(bot, move |bot: Bot, msg: Message, cmd: Command| {
         let tx = tx.clone();
-        async { answer(tx, bot, msg, cmd).await }
+        let start_time = start_time.clone();
+        async move {
+            if msg.date < start_time {
+                log::warn!("Ignored out-of-date message: {}", msg.id.0);
+                return ResponseResult::Ok(());
+            }
+            answer(tx, bot, msg, cmd).await
+        }
     })
     .await;
     log::info!("Stopping backend...");
@@ -43,8 +49,6 @@ enum Command {
 }
 
 async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
-    //println!("msg: {:#?}", &msg);
-
     match cmd {
         Command::Help => {
             bot.send_message(msg.chat.id, Command::descriptions().to_string())
