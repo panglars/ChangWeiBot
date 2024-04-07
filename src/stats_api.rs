@@ -56,6 +56,7 @@ pub async fn get_stats(cli: reqwest::Client, name: &str) -> Result<PlayerStats, 
     Ok(json)
 }
 
+/*
 pub async fn get_vehicles(cli: reqwest::Client, name: &str) -> Result<PlayerStats, Error> {
     let path = "/bf1/vehicles";
     let base = Url::parse(STATSAPI).unwrap();
@@ -70,3 +71,4 @@ pub async fn get_vehicles(cli: reqwest::Client, name: &str) -> Result<PlayerStat
 
     Ok(json)
 }
+*/
