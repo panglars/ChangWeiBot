@@ -40,10 +40,7 @@ pub async fn req(chan: ProducerChan, r: StateRequest) -> StateResponse {
     let (p_tx, p_rx): Pipe = tokio::sync::oneshot::channel();
     chan.send((r, p_tx)).await.unwrap();
     // todo: error handling
-    let resp = tokio::task::spawn_blocking(|| p_rx.blocking_recv())
-        .await
-        .unwrap()
-        .unwrap();
+    let resp = p_rx.await.unwrap();
     resp
 }
 
