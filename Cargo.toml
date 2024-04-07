@@ -19,3 +19,4 @@ tokio = { version = "1.8", features = [
 ] }
 rusqlite = { version = "0.31.0", features = ["bundled"] }
 serde = "1.0.197"
+chrono = "0.4.37"
