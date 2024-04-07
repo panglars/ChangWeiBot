@@ -33,7 +33,7 @@ enum Command {
     #[command(description = "Bind ea username")]
     Bind(String),
     #[command(description = "Unbind ea username")]
-    Unbind(String),
+    Unbind,
     #[command(description = "Show weapons stats")]
     Weapons(String),
     #[command(description = "Show vehicles stats")]
@@ -119,7 +119,7 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                     .await?
             }
         }
-        Command::Unbind(username) => {
+        Command::Unbind => {
             if msg.chat.id.is_user() {
                 match req(
                     chan,
@@ -130,7 +130,7 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                 .await
                 {
                     StateResponse::Ok => {
-                        bot.send_message(msg.chat.id, format!("Unbind with {username}."))
+                        bot.send_message(msg.chat.id, format!("Unbind succful."))
                             .await?
                     }
                     _ => bot.send_message(msg.chat.id, "Failed to unbind").await?,
