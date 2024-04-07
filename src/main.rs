@@ -82,7 +82,14 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
             } else {
                 username
             };
-            let json = match req(chan, StateRequest::GetStats { ea_id: ea_id }).await {
+            let json = match req(
+                chan,
+                StateRequest::GetStats {
+                    ea_id: ea_id.clone(),
+                },
+            )
+            .await
+            {
                 StateResponse::Stats(s) => s,
                 _ => {
                     bot.send_message(
@@ -93,51 +100,59 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                     return Ok(());
                 }
             };
-            bot.send_message(msg.chat.id, format!("{:#?}", json))
+            bot.send_message(msg.chat.id, format!("Status of {ea_id}:\n{:#?}", json))
                 .await?
         }
 
         Command::Bind(username) => {
-            if msg.chat.id.is_user() {
+            if !msg.chat.id.is_user() {
+                bot.send_message(msg.chat.id, format!("Please PM to bind user."))
+                    .await?
+            } else if username.is_empty() {
+                bot.send_message(msg.chat.id, format!("Please specify a username."))
+                    .await?
+            } else {
+                let user_id = msg.from().unwrap().id.to_string();
                 match req(
                     chan,
                     StateRequest::InsertUser {
-                        user_id: msg.from().unwrap().id.to_string(),
+                        user_id: user_id.clone(),
                         ea_id: username.clone(),
                     },
                 )
                 .await
                 {
                     StateResponse::Ok => {
-                        bot.send_message(msg.chat.id, format!("Bind with {username}."))
+                        bot.send_message(msg.chat.id, format!("Bind {user_id} with {username}."))
                             .await?
                     }
                     _ => bot.send_message(msg.chat.id, "Failed to bind").await?,
                 }
-            } else {
-                bot.send_message(msg.chat.id, format!("Please PM to bind user."))
-                    .await?
             }
         }
         Command::Unbind(username) => {
-            if msg.chat.id.is_user() {
+            if !msg.chat.id.is_user() {
+                bot.send_message(msg.chat.id, format!("Please PM to unbind user."))
+                    .await?
+            } else if username.is_empty() {
+                bot.send_message(msg.chat.id, format!("Please specify a username."))
+                    .await?
+            } else {
+                let user_id = msg.from().unwrap().id.to_string();
                 match req(
                     chan,
                     StateRequest::DeleteUser {
-                        user_id: msg.from().unwrap().id.to_string(),
+                        user_id: user_id.clone(),
                     },
                 )
                 .await
                 {
                     StateResponse::Ok => {
-                        bot.send_message(msg.chat.id, format!("Unbind with {username}."))
+                        bot.send_message(msg.chat.id, format!("Unbind {user_id} with {username}."))
                             .await?
                     }
                     _ => bot.send_message(msg.chat.id, "Failed to unbind").await?,
                 }
-            } else {
-                bot.send_message(msg.chat.id, format!("Please PM to unbind user."))
-                    .await?
             }
         }
     };
