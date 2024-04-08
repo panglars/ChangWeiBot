@@ -1,11 +1,11 @@
 # ChangWeiBot
 
-<p style="text-align:center;">
+<div style="text-align:center;">
 好,把他们上市!
 
-![](./assets/Chang_Wei.webp)
+<img src="./assets/Chang_Wei.webp" alt="drawing" width="300"/>
 
-</p>
+</div>
 
 Deving...
 
