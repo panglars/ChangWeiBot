@@ -1,7 +1,6 @@
 # ChangWeiBot
 
 <p style="text-align:center;">
-![](./assets/Chang_Wei.webp)
 
 **好,把他们上市!** 
 
