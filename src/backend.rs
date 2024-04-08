@@ -54,8 +54,8 @@ pub async fn backend(mut chan: ConsumerChan) {
     let db_conn = Connection::open("Users.db").expect("error open db");
     init_db(&db_conn).expect("Error to create the table");
     let qwq = reqwest::Client::builder()
-        .connect_timeout(Duration::from_secs(3))
-        .timeout(Duration::from_secs(5))
+        .connect_timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(10))
         .build()
         .expect("error create reqwest client");
     // waiting for requests

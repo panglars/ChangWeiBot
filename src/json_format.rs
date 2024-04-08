@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+// TODO serialize to snake case
+// https://serde.rs/field-attrs.html
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Vehicles {
     vehicles: Vec<PerVehicles>,
@@ -22,7 +25,7 @@ pub struct Weapons {
 pub struct PerWeapons {
     weaponName: String,
     kills: u32,
-    killPerMinute: f64,
+    killsPerMinute: f64,
     accuracy: String,
     headshots: String,
 }
