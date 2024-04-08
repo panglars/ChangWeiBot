@@ -71,7 +71,10 @@ pub async fn backend(mut chan: ConsumerChan) {
             StateRequest::GetWeapons { ea_id } => {
                 let resp = match get_weapons(qwq, &ea_id).await {
                     Ok(x) => StateResponse::Weapons(x),
-                    Err(e) => StateResponse::NetworkError(e),
+                    Err(e) => {
+                        eprintln!("Network Error: {}", e);
+                        StateResponse::NetworkError(e)
+                    }
                 };
                 pipe.send(resp).unwrap();
             }
@@ -79,14 +82,20 @@ pub async fn backend(mut chan: ConsumerChan) {
             StateRequest::GetVehicles { ea_id } => {
                 let resp = match get_vehicles(qwq, &ea_id).await {
                     Ok(x) => StateResponse::Vehicles(x),
-                    Err(e) => StateResponse::NetworkError(e),
+                    Err(e) => {
+                        eprintln!("Network Error: {}", e);
+                        StateResponse::NetworkError(e)
+                    }
                 };
                 pipe.send(resp).unwrap();
             }
             StateRequest::GetStats { ea_id } => {
                 let resp = match get_stats(qwq, &ea_id).await {
                     Ok(x) => StateResponse::Stats(x),
-                    Err(e) => StateResponse::NetworkError(e),
+                    Err(e) => {
+                        eprintln!("Network Error: {}", e);
+                        StateResponse::NetworkError(e)
+                    }
                 };
                 pipe.send(resp).unwrap();
             }
@@ -94,21 +103,30 @@ pub async fn backend(mut chan: ConsumerChan) {
                 // todo: sql operations should be async
                 let resp = match insert_user(&db_conn, &user_id, &ea_id) {
                     Ok(_x) => StateResponse::Ok,
-                    Err(e) => StateResponse::DatabaseError(e),
+                    Err(e) => {
+                        eprintln!("Database Error: {}", e);
+                        StateResponse::DatabaseError(e)
+                    }
                 };
                 pipe.send(resp).unwrap();
             }
             StateRequest::QueryUser { user_id } => {
                 let resp = match query_user(&db_conn, &user_id) {
                     Ok(x) => StateResponse::EaUser(x),
-                    Err(e) => StateResponse::DatabaseError(e),
+                    Err(e) => {
+                        eprintln!("Database Error: {}", e);
+                        StateResponse::DatabaseError(e)
+                    }
                 };
                 pipe.send(resp).unwrap();
             }
             StateRequest::DeleteUser { user_id } => {
                 let resp = match delete_user(&db_conn, &user_id) {
                     Ok(_x) => StateResponse::Ok,
-                    Err(e) => StateResponse::DatabaseError(e),
+                    Err(e) => {
+                        eprintln!("Database Error: {}", e);
+                        StateResponse::DatabaseError(e)
+                    }
                 };
                 pipe.send(resp).unwrap();
             }

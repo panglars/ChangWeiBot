@@ -2,32 +2,31 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Vehicles {
-    vehicles: Vec<per_Vehicles>,
+    vehicles: Vec<PerVehicles>,
 }
-
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct per_Vehicles {
+pub struct PerVehicles {
     vehicleName: String,
     kills: u32,
     killsPerMinute: f64,
-    //    timeIn: u32,
+    timeIn: u32,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Weapons {
-    userId: String,
-    weapons: Vec<per_Weapons>,
+    weapons: Vec<PerWeapons>,
 }
-
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct per_Weapons {
+pub struct PerWeapons {
     weaponName: String,
     kills: u32,
     killPerMinute: f64,
     accuracy: String,
     headshots: String,
 }
-
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PlayerStats {
     userName: String,

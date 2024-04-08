@@ -35,7 +35,7 @@ pub async fn get_vehicles(cli: reqwest::Client, name: &str) -> Result<Vehicles, 
     Ok(json)
 }
 
-// BUG Can't revice anything
+// BUG  error decoding response body
 pub async fn get_weapons(cli: reqwest::Client, name: &str) -> Result<Weapons, Error> {
     let path = "/bf1/weapons";
     let base = Url::parse(STATSAPI).unwrap();
@@ -46,11 +46,12 @@ pub async fn get_weapons(cli: reqwest::Client, name: &str) -> Result<Weapons, Er
         .append_pair("platform", "pc")
         .append_pair("skip_battlelog", "false")
         .append_pair("lang", "en-us");
-    println!("{}", url);
-    let mut json: Weapons = cli.get(url).send().await?.json().await?;
+
+    // let res = cli.get(url.clone()).send().await?.text().await?;
+    // println!("get api{} \n {:?}", url, res);
+
+    let mut json: Weapons = cli.get(url.clone()).send().await?.json().await?;
     json.sort_by_kill();
     json.get_top_item();
-    //    println!("{:#?}", json);
-
     Ok(json)
 }

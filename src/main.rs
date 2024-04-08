@@ -89,7 +89,7 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                 _ => {
                     bot.send_message(
                         msg.chat.id,
-                        "Failed to fetch your EA stats, please wait a while and retry.",
+                        format!("Failed to fetch your EA stats, please wait a while and retry."),
                     )
                     .await?;
                     return Ok(());
