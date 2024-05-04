@@ -44,7 +44,7 @@ pub type ConsumerChan = tokio::sync::mpsc::Receiver<StatePipe>;
 pub async fn req(chan: ProducerChan, r: StateRequest) -> StateResponse {
     let (p_tx, p_rx): Pipe = tokio::sync::oneshot::channel();
     chan.send((r, p_tx)).await.unwrap();
-    // todo: error handling
+    // TODO: error handling
     let resp = p_rx.await.unwrap();
     resp
 }

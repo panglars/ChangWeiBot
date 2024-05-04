@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-// TODO serialize to snake case
+// TODO: serialize to snake case
 // https://serde.rs/field-attrs.html
 
 #[derive(Debug, Deserialize, Serialize)]

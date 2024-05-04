@@ -1,10 +1,7 @@
 # ChangWeiBot
 
-<p style="text-align:center;">
-
 **好,把他们上市!** 
 
-</p>
 
 Deving...
 
@@ -19,3 +16,6 @@ cargo build
 ## Todo
 
 - [ ] rander image
+
+## Credit 
+[Stats API](https://api.gametools.network/docs#/)
