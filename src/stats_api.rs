@@ -57,10 +57,11 @@ mod tests {
 
     #[tokio::test]
     async fn weapon() {
-        let json = match get_weapons(reqwest::Client::new(), "iiTzArcur").await {
+        let json = match get_weapons(reqwest::Client::new(), "glibc2").await {
             Ok(x) => x,
             Err(e) => panic!("{:?}", e),
         };
-        println!("{:#?}", json);
+        print!("{:#?}\n", json);
+        print!("{:#?}\n", json.fitter_by_type("Lmg"));
     }
 }

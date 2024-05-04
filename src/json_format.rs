@@ -8,9 +8,10 @@ pub struct Vehicles {
     vehicles: Vec<PerVehicles>,
 }
 #[allow(non_snake_case)]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PerVehicles {
     vehicleName: String,
+    r#type: String,
     kills: u32,
     killsPerMinute: f64,
     timeIn: u32,
@@ -21,9 +22,10 @@ pub struct Weapons {
     weapons: Vec<PerWeapons>,
 }
 #[allow(non_snake_case)]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PerWeapons {
     weaponName: String,
+    r#type: String,
     kills: u32,
     killsPerMinute: f64,
     accuracy: String,
@@ -57,15 +59,35 @@ impl Vehicles {
     pub fn sort_by_kill(&mut self) {
         self.vehicles.sort_by(|a, b| b.kills.cmp(&a.kills));
     }
+    pub fn fitter_by_type(&self, vehicle_type: &str) -> Vehicles {
+        Vehicles {
+            vehicles: self
+                .vehicles
+                .iter()
+                .filter(|v| v.r#type == vehicle_type)
+                .cloned()
+                .collect(),
+        }
+    }
     pub fn get_top_item(&mut self) {
-        self.vehicles.split_off(7);
+        self.vehicles.truncate(10);
     }
 }
 impl Weapons {
     pub fn sort_by_kill(&mut self) {
         self.weapons.sort_by(|a, b| b.kills.cmp(&a.kills));
     }
+    pub fn fitter_by_type(&self, weapon_type: &str) -> Weapons {
+        Weapons {
+            weapons: self
+                .weapons
+                .iter()
+                .filter(|w| w.r#type == weapon_type)
+                .cloned()
+                .collect(),
+        }
+    }
     pub fn get_top_item(&mut self) {
-        self.weapons.split_off(7);
+        self.weapons.truncate(10);
     }
 }
