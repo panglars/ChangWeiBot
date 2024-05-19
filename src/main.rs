@@ -1,5 +1,5 @@
 use changweibot::backend::{backend, req, ConsumerChan, ProducerChan, StateRequest, StateResponse};
-use changweibot::utilities::get_ea_id;
+use changweibot::utilities::{get_ea_id, make_vehicle_keyboard};
 use teloxide::{prelude::*, utils::command::BotCommands};
 
 #[tokio::main]
@@ -12,6 +12,7 @@ async fn main() {
     let tx2 = tx.clone();
     let backend_handler = tokio::spawn(async { backend(rx).await });
     let start_time = chrono::Utc::now();
+    // TODO: replace to dispatching model
     Command::repl(bot, move |bot: Bot, msg: Message, cmd: Command| {
         let tx = tx.clone();
         let start_time = start_time.clone();
@@ -83,6 +84,7 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
         }
 
         Command::Vehicles(username) => {
+            let keyboard = make_vehicle_keyboard();
             let ea_id = match get_ea_id(chan.clone(), &bot, &msg, username).await {
                 Ok(id) => id,
                 Err(_) => return Ok(()),
@@ -106,6 +108,7 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                 }
             };
             bot.send_message(msg.chat.id, format!("Vehicles of {ea_id}:\n{:#?}", json))
+                .reply_markup(keyboard)
                 .await?
         }
 
