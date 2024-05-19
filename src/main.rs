@@ -1,4 +1,5 @@
 use changweibot::backend::{backend, req, ConsumerChan, ProducerChan, StateRequest, StateResponse};
+use changweibot::utilities::get_ea_id;
 use teloxide::{prelude::*, utils::command::BotCommands};
 
 #[tokio::main]
@@ -55,27 +56,9 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                 .await?
         }
         Command::Weapons(username) => {
-            let ea_id = if username.is_empty() {
-                match req(
-                    chan.clone(),
-                    StateRequest::QueryUser {
-                        user_id: msg.from().unwrap().id.to_string(),
-                    },
-                )
-                .await
-                {
-                    StateResponse::EaUser(u) => u,
-                    _ => {
-                        bot.send_message(
-                            msg.chat.id,
-                            "Failed to get your EA username, please set it with /bind",
-                        )
-                        .await?;
-                        return Ok(());
-                    }
-                }
-            } else {
-                username
+            let ea_id = match get_ea_id(chan.clone(), &bot, &msg, username).await {
+                Ok(id) => id,
+                Err(_) => return Ok(()),
             };
             let json = match req(
                 chan,
@@ -100,27 +83,9 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
         }
 
         Command::Vehicles(username) => {
-            let ea_id = if username.is_empty() {
-                match req(
-                    chan.clone(),
-                    StateRequest::QueryUser {
-                        user_id: msg.from().unwrap().id.to_string(),
-                    },
-                )
-                .await
-                {
-                    StateResponse::EaUser(u) => u,
-                    _ => {
-                        bot.send_message(
-                            msg.chat.id,
-                            "Failed to get your EA username, please set it with /bind",
-                        )
-                        .await?;
-                        return Ok(());
-                    }
-                }
-            } else {
-                username
+            let ea_id = match get_ea_id(chan.clone(), &bot, &msg, username).await {
+                Ok(id) => id,
+                Err(_) => return Ok(()),
             };
             let json = match req(
                 chan,
@@ -145,27 +110,9 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
         }
 
         Command::Status(username) => {
-            let ea_id = if username.is_empty() {
-                match req(
-                    chan.clone(),
-                    StateRequest::QueryUser {
-                        user_id: msg.from().unwrap().id.to_string(),
-                    },
-                )
-                .await
-                {
-                    StateResponse::EaUser(u) => u,
-                    _ => {
-                        bot.send_message(
-                            msg.chat.id,
-                            "Failed to get your EA username, please set it with /bind",
-                        )
-                        .await?;
-                        return Ok(());
-                    }
-                }
-            } else {
-                username
+            let ea_id = match get_ea_id(chan.clone(), &bot, &msg, username).await {
+                Ok(id) => id,
+                Err(_) => return Ok(()),
             };
             let json = match req(
                 chan,

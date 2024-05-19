@@ -44,7 +44,7 @@ pub type ConsumerChan = tokio::sync::mpsc::Receiver<StatePipe>;
 pub async fn req(chan: ProducerChan, r: StateRequest) -> StateResponse {
     let (p_tx, p_rx): Pipe = tokio::sync::oneshot::channel();
     chan.send((r, p_tx)).await.unwrap();
-    // TODO: error handling
+    // TODO: add error handling
     let resp = p_rx.await.unwrap();
     resp
 }
@@ -78,7 +78,6 @@ pub async fn backend(mut chan: ConsumerChan) {
                 };
                 pipe.send(resp).unwrap();
             }
-
             StateRequest::GetVehicles { ea_id } => {
                 let resp = match get_vehicles(qwq, &ea_id).await {
                     Ok(x) => StateResponse::Vehicles(x),
