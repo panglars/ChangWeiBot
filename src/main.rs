@@ -1,5 +1,6 @@
 use changweibot::backend::{backend, req, ConsumerChan, ProducerChan, StateRequest, StateResponse};
 use changweibot::utilities::{get_ea_id, make_vehicle_keyboard};
+use log::info;
 use teloxide::{prelude::*, utils::command::BotCommands};
 
 #[tokio::main]
@@ -73,12 +74,13 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                 _ => {
                     bot.send_message(
                         msg.chat.id,
-                        format!("Failed to fetch your EA stats, please wait a while and retry."),
+                        format!("Failed to fetch your EA stats, please wait a while and retry or recheck your username."),
                     )
                     .await?;
                     return Ok(());
                 }
             };
+            info!("Checking {ea_id} weapons stats.");
             bot.send_message(msg.chat.id, format!("Weapons of {ea_id}:\n{:#?}", json))
                 .await?
         }
@@ -107,6 +109,8 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                     return Ok(());
                 }
             };
+
+            info!("Checking {ea_id} vehicles stats.");
             bot.send_message(msg.chat.id, format!("Vehicles of {ea_id}:\n{:#?}", json))
                 .reply_markup(keyboard)
                 .await?
@@ -135,6 +139,9 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                     return Ok(());
                 }
             };
+
+            info!("Checking {ea_id} status.");
+
             bot.send_message(msg.chat.id, format!("Status of {ea_id}:\n{:#?}", json))
                 .await?
         }
@@ -158,6 +165,7 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                 .await
                 {
                     StateResponse::Ok => {
+                        info!("bind {user_id} with {username}");
                         bot.send_message(msg.chat.id, format!("Bind {user_id} with {username}."))
                             .await?
                     }
@@ -180,6 +188,7 @@ async fn answer(chan: ProducerChan, bot: Bot, msg: Message, cmd: Command) -> Res
                 .await
                 {
                     StateResponse::Ok => {
+                        info!("unbind {user_id}");
                         bot.send_message(msg.chat.id, format!("Unbind {user_id}."))
                             .await?
                     }
